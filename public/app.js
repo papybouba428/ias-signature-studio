@@ -7,16 +7,17 @@ const name=esc($('fullName').value.trim()||'Votre nom'),role=esc($('role').value
 const email=$('email').value.trim(),phone=$('phone').value.trim();
 const campaignImage=campaigns.length===1&&campaigns[0].image?origin+campaigns[0].image:origin+'/assets/campaigns.gif';
 const campaign=campaigns.length?`<td valign="middle" width="315" style="width:315px;padding:8px 0 8px 18px;border-left:2px solid #C99A42"><a href="${origin}/go?utm_source=signature_email&amp;utm_medium=email&amp;utm_campaign=ias_multi" target="_blank" style="text-decoration:none"><img src="${campaignImage}" alt="Découvrez les actualités de l’IAS" width="290" height="98" style="display:block;width:290px;height:98px;border:0"></a><div style="font:10px Arial,sans-serif;color:#9A6A20;padding-top:5px">Découvrez nos actualités →</div></td>`:'';
-const separator='<td width="1" style="width:1px;background:#D9B36B;font-size:1px">&nbsp;</td>';
-const icon=(glyph)=>`<span style="display:inline-block;vertical-align:middle;text-align:center;width:26px;height:26px;line-height:26px;border-radius:50%;background:#F5EBD8;color:#9C6B1D;font:bold 15px Arial,sans-serif;margin-right:7px">${glyph}</span>`;
-const item=(text,href)=>`<td valign="middle" style="padding:6px 9px;font:11px Arial,sans-serif;color:#271504;white-space:nowrap">${href?`<a href="${esc(href)}" style="color:#271504;text-decoration:none">${text}</a>`:text}</td>`;
-const cells=[`<td valign="middle" style="padding:6px 9px 6px 0"><span style="display:inline-block;background:#B58428;border-radius:18px;color:#fff;padding:9px 12px;font:bold 11px Arial,sans-serif;white-space:nowrap">📍 Dakar, Sénégal</span></td>`];
-if(phone)cells.push(item(icon('☎')+esc(phone),'tel:'+phone.replace(/[^+0-9]/g,'')));
-if(email)cells.push(item(icon('✉')+esc(email),'mailto:'+email));
-if(settings.website)cells.push(item(icon('↗')+'Site web',settings.website));
+const separator='<td width="1" style="width:1px;border-left:1px solid #D9B36B;font-size:1px">&nbsp;</td>';
+const icon=(glyph)=>`<td width="27" valign="middle" align="center" style="width:27px;height:27px;background:#F5EBD8;border-radius:50%;color:#9C6B1D;font:bold 15px Arial,sans-serif;line-height:27px">${glyph}</td>`;
+const item=(glyph,text,href)=>`<td valign="middle" style="padding:6px 10px;white-space:nowrap"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${icon(glyph)}<td valign="middle" style="padding-left:8px;font:11px Arial,sans-serif;color:#271504;white-space:nowrap">${href?`<a href="${esc(href)}" style="color:#271504;text-decoration:none">${text}</a>`:text}</td></tr></table></td>`;
+const cells=[`<td valign="middle" style="padding:6px 10px 6px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:#B58428;border-radius:18px"><tr><td style="padding:8px 12px;font:bold 11px Arial,sans-serif;color:#fff;white-space:nowrap">Dakar, Sénégal</td></tr></table></td>`];
+if(phone)cells.push(item('☎',esc(phone),'tel:'+phone.replace(/[^+0-9]/g,'')));
+if(email)cells.push(item('✉',esc(email),'mailto:'+email));
+if(settings.website)cells.push(item('↗','Site web',settings.website));
 const contact=cells.join(separator);
 const socials=[['in',settings.linkedin,'LinkedIn'],['f',settings.facebook,'Facebook'],['◎',settings.instagram,'Instagram'],['♪',settings.tiktok,'TikTok']];
-const socialHtml=socials.map(([symbol,url,label])=>url?`<a href="${esc(url)}" title="${label}" target="_blank" style="display:inline-block;vertical-align:middle;background:#B58428;color:#fff;text-decoration:none;text-align:center;font:bold 13px Arial,sans-serif;width:26px;height:26px;line-height:26px;border-radius:50%;margin-left:5px">${symbol}</a>`:`<span title="${label} : renseigner le lien dans Administration" style="display:inline-block;vertical-align:middle;background:#E9DCC3;color:#8A6A36;text-align:center;font:bold 13px Arial,sans-serif;width:26px;height:26px;line-height:26px;border-radius:50%;margin-left:5px">${symbol}</span>`).join('');
+const socialHtml=socials.map(([symbol,url,label])=>`<td width="35" align="center" valign="middle" style="width:35px;padding-left:5px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="28" height="28" align="center" valign="middle" style="width:28px;height:28px;background:${url?'#B58428':'#E9DCC3'};border-radius:50%;font:bold 13px Arial,sans-serif;color:${url?'#ffffff':'#8A6A36'}">${url?`<a href="${esc(url)}" target="_blank" title="${label}" style="display:block;color:#ffffff;text-decoration:none;line-height:28px">${symbol}</a>`:symbol}</td></tr></table></td>`).join('');
+
 return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="1000" style="width:1000px;max-width:1000px;border-collapse:separate;border-spacing:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#271504">
 <tr><td style="padding:15px 15px 10px 15px">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
@@ -27,7 +28,7 @@ ${campaign}
 <tr><td style="padding:0 15px"><div style="border-top:1px solid #D6AB60;font-size:1px;height:1px">&nbsp;</div></td></tr>
 <tr><td style="padding:5px 15px 9px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
 <td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${contact}</tr></table></td>
-<td align="right" valign="middle" style="white-space:nowrap;font:11px Arial,sans-serif;color:#271504;padding-left:8px"><strong>Suivez l’IAS</strong>${socialHtml}</td>
+<td align="right" valign="middle" style="padding-left:12px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font:bold 11px Arial,sans-serif;color:#271504;white-space:nowrap;padding-right:6px">Suivez l’IAS</td>${socialHtml}</tr></table></td>
 </tr></table></td></tr></table>`;
 }
 function update(){ $('preview').innerHTML=signature() }
