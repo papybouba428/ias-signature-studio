@@ -6,8 +6,8 @@ const PORT=Number(process.env.PORT||3000),PASSWORD=process.env.IAS_ADMIN_PASSWOR
 if(!PASSWORD||PASSWORD.length<12){console.error('Définir IAS_ADMIN_PASSWORD (au moins 12 caractères) avant le démarrage.');process.exit(1)}
 const SECRET=process.env.IAS_SESSION_SECRET||'';
 if(SECRET.length<32){console.error('Définir IAS_SESSION_SECRET (au moins 32 caractères).');process.exit(1)}
-const CAM=path.join(DATA,'campaigns.json'),STATS=path.join(DATA,'stats.json');
-if(!fs.existsSync(CAM))fs.writeFileSync(CAM,'[]');if(!fs.existsSync(STATS))fs.writeFileSync(STATS,'{}');
+const CAM=path.join(DATA,'campaigns.json'),STATS=path.join(DATA,'stats.json'),SETTINGS=path.join(DATA,'settings.json');
+if(!fs.existsSync(SETTINGS))fs.writeFileSync(SETTINGS,'{}');if(!fs.existsSync(CAM))fs.writeFileSync(CAM,'[]');if(!fs.existsSync(STATS))fs.writeFileSync(STATS,'{}');
 const read=f=>JSON.parse(fs.readFileSync(f,'utf8'));
 const write=(f,v)=>{const tmp=f+'.tmp';fs.writeFileSync(tmp,JSON.stringify(v,null,2));fs.renameSync(tmp,f)};
 function json(res,status,obj){const b=JSON.stringify(obj);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(b)}
@@ -30,6 +30,16 @@ http.createServer(async(req,res)=>{
    res.setHeader('Set-Cookie',`ias_session=${token()}; HttpOnly; SameSite=Strict; Path=/; Max-Age=28800${process.env.NODE_ENV==='production'?'; Secure':''}`);return json(res,200,{ok:true})
   }
   if(pathname==='/api/logout'&&req.method==='POST'){res.setHeader('Set-Cookie','ias_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return json(res,200,{ok:true})}
+  if(pathname==='/api/settings'&&req.method==='GET')return json(res,200,read(SETTINGS));
+  if(pathname==='/api/admin/settings'&&req.method==='POST'){
+   if(!auth(req))return json(res,401,{error:'Accès refusé'});
+   const b=await body(req),o={};
+   for(const key of ['website','linkedin','facebook','instagram','tiktok']){
+    const v=String(b[key]||'').trim();if(v&&!safeLink(v))return json(res,400,{error:'Lien invalide : '+key});
+    o[key]=v?safeLink(v):'';
+   }
+   write(SETTINGS,o);return json(res,200,{ok:true});
+  }
   if(pathname==='/api/me')return json(res,200,{admin:auth(req)});
   if(pathname==='/api/campaigns'&&req.method==='GET')return json(res,200,read(CAM).filter(x=>x.active).map(x=>({id:x.id,title:x.title,image:x.image,active:x.active,order:x.order})).sort((a,b)=>a.order-b.order));
   if(pathname==='/api/admin/campaigns'&&req.method==='GET'){if(!auth(req))return json(res,401,{error:'Accès refusé'});return json(res,200,read(CAM).sort((a,b)=>a.order-b.order))}
