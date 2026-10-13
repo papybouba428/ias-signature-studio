@@ -2,11 +2,33 @@ const $=id=>document.getElementById(id),esc=s=>String(s||'').replace(/[&<>"']/g,
 let campaigns=[],adminCampaigns=[];
 const origin=location.origin.startsWith('file:')?'http://localhost:3000':location.origin;
 const api=async(path,opts={})=>{const r=await fetch(path,{credentials:'same-origin',...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});const j=await r.json();if(!r.ok)throw Error(j.error||'Erreur');return j};
-function signature(){const name=esc($('fullName').value.trim()||'Votre nom'),role=esc($('role').value.trim()||'Votre fonction');const email=$('email').value.trim(),phone=$('phone').value.trim();const row=(x)=>`<tr><td style="font-family:Arial,sans-serif;font-size:12px;color:#271504;padding:1px 0">${x}</td></tr>`;
+function signature(){
+const name=esc($('fullName').value.trim()||'Votre nom'),role=esc($('role').value.trim()||'Votre fonction');
+const email=$('email').value.trim(),phone=$('phone').value.trim();
 const campaignImage=campaigns.length===1&&campaigns[0].image?origin+campaigns[0].image:origin+'/assets/campaigns.gif';
-const right=campaigns.length?`<td width="230" valign="middle" style="vertical-align:middle;padding-left:16px;border-left:2px solid #EFC871"><a href="${origin}/go?utm_source=signature_email&amp;utm_medium=email&amp;utm_campaign=ias_multi" target="_blank" style="text-decoration:none"><img src="${campaignImage}" alt="Découvrez les actualités de l’IAS" width="220" height="75" style="display:block;width:220px;height:75px;border:0"></a><div style="font-family:Arial,sans-serif;font-size:10px;color:#81683e;padding-top:5px">Découvrez nos actualités →</div></td>`:'';
-const contact=(email?row(`<a href="mailto:${encodeURIComponent(email)}" style="color:#271504;text-decoration:none">${esc(email)}</a>`):'')+(phone?row(esc(phone)):'');
-return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;max-width:610px;background:#FFFFFF"><tr><td valign="top" style="padding:3px 11px 3px 0;width:74px"><img src="${origin}/assets/logo-ias.png" alt="IAS" width="67" style="width:67px;height:auto;display:block;border:0"></td><td valign="top" style="padding:3px 15px 3px 0"><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse"><tr><td style="font:bold 15px Arial,sans-serif;color:#271504;padding-bottom:3px">${name}</td></tr><tr><td style="font:12px Arial,sans-serif;color:#916a2d;padding-bottom:6px">${role}</td></tr>${contact}<tr><td style="font:11px Arial,sans-serif;color:#271504;padding-top:8px;font-weight:bold">Institut des Algorithmes du Sénégal</td></tr><tr><td style="font:italic 10px Arial,sans-serif;color:#897351;padding-top:2px">Former, connecter, innover : l’IA au service de l’Afrique.</td></tr></table></td>${right}</tr></table>`}
+const campaign=campaigns.length?`<td valign="middle" width="225" style="width:225px;padding:8px 0 8px 14px;border-left:2px solid #C99A42"><a href="${origin}/go?utm_source=signature_email&amp;utm_medium=email&amp;utm_campaign=ias_multi" target="_blank" style="text-decoration:none"><img src="${campaignImage}" alt="Découvrez les actualités de l’IAS" width="210" height="72" style="display:block;width:210px;height:72px;border:0"></a><div style="font:10px Arial,sans-serif;color:#9A6A20;padding-top:5px">Découvrez nos actualités →</div></td>`:'';
+const item=(text,href)=>`<td valign="middle" style="padding:6px 10px 6px 0;font:11px Arial,sans-serif;color:#271504;white-space:nowrap">${href?`<a href="${href}" style="color:#271504;text-decoration:none">${text}</a>`:text}</td>`;
+const separator='<td width="1" style="width:1px;background:#D9B36B;font-size:1px">&nbsp;</td>';
+const cells=[item('📍 Dakar, Sénégal','')];
+if(phone)cells.push(item('☎ '+esc(phone),'tel:'+encodeURIComponent(phone.replace(/\s/g,''))));
+if(email)cells.push(item('✉ '+esc(email),'mailto:'+encodeURIComponent(email)));
+cells.push(item('↗ IAS','https://ias.sn'));
+const contact=cells.join(separator);
+const socials=[['in',''],['f',''],['◎',''],['♪','']]; // Ajouter les URLs officielles dès leur validation
+const socialHtml=socials.filter(x=>x[1]).map(([symbol,url])=>`<a href="${esc(url)}" target="_blank" style="display:inline-block;background:#B58428;color:#fff;text-decoration:none;font:bold 11px Arial,sans-serif;padding:5px 7px;border-radius:20px;margin-left:4px">${symbol}</a>`).join('');
+return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="740" style="width:740px;max-width:740px;border-collapse:separate;border-spacing:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#271504">
+<tr><td style="padding:15px 15px 10px 15px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
+<td valign="middle" width="100" style="width:100px;padding:4px 13px 4px 0;border-right:2px solid #C99A42"><img src="${origin}/assets/logo-ias.png" alt="IAS" width="85" style="width:85px;height:auto;display:block;border:0"></td>
+<td valign="middle" style="padding:4px 15px"><div style="font:bold 23px Arial,sans-serif;color:#271504;line-height:1.15">${name}</div><div style="font:bold 15px Arial,sans-serif;color:#A87928;padding-top:5px">${role}</div><div style="font:bold 12px Arial,sans-serif;color:#271504;padding-top:10px">Institut des Algorithmes du Sénégal</div><div style="font:italic 10px Arial,sans-serif;color:#816E56;padding-top:4px">Former, connecter, innover : l’IA au service de l’Afrique.</div></td>
+${campaign}
+</tr></table></td></tr>
+<tr><td style="padding:0 15px"><div style="border-top:1px solid #D6AB60;font-size:1px;height:1px">&nbsp;</div></td></tr>
+<tr><td style="padding:5px 15px 9px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
+<td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${contact}</tr></table></td>
+<td align="right" valign="middle" style="white-space:nowrap;font:11px Arial,sans-serif;color:#271504"><strong>Suivez l’IAS</strong>${socialHtml}</td>
+</tr></table></td></tr></table>`;
+}
 function update(){ $('preview').innerHTML=signature() }
 for(const id of ['fullName','role','email','phone'])$(id).addEventListener('input',update);
 $('copyBtn').onclick=async()=>{try{const html=signature();const blob=new Blob([html],{type:'text/html'});if(navigator.clipboard?.write&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':blob,'text/plain':new Blob([$('preview').innerText],{type:'text/plain'})})]);$('copyStatus').textContent='Signature formatée copiée. Collez-la dans Outlook.'}else{$('copyStatus').textContent='Copie formatée indisponible sur ce navigateur. Utilisez le téléchargement HTML.'}}catch(e){$('copyStatus').textContent='Copie impossible : utilisez le fichier HTML ou une connexion HTTPS.'}};
