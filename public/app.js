@@ -1,5 +1,5 @@
 const $=id=>document.getElementById(id),esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let campaigns=[],adminCampaigns=[];
+let campaigns=[],adminCampaigns=[],settings={};
 const origin=location.origin.startsWith('file:')?'http://localhost:3000':location.origin;
 const api=async(path,opts={})=>{const r=await fetch(path,{credentials:'same-origin',...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});const j=await r.json();if(!r.ok)throw Error(j.error||'Erreur');return j};
 function signature(){
@@ -12,9 +12,9 @@ const separator='<td width="1" style="width:1px;background:#D9B36B;font-size:1px
 const cells=[item('📍 Dakar, Sénégal','')];
 if(phone)cells.push(item('☎ '+esc(phone),'tel:'+encodeURIComponent(phone.replace(/\s/g,''))));
 if(email)cells.push(item('✉ '+esc(email),'mailto:'+encodeURIComponent(email)));
-cells.push(item('↗ IAS','https://ias.sn'));
+if(settings.website)cells.push(item('↗ Site web',esc(settings.website)));
 const contact=cells.join(separator);
-const socials=[['in',''],['f',''],['◎',''],['♪','']]; // Ajouter les URLs officielles dès leur validation
+const socials=[['in',settings.linkedin],['f',settings.facebook],['◎',settings.instagram],['♪',settings.tiktok]];
 const socialHtml=socials.filter(x=>x[1]).map(([symbol,url])=>`<a href="${esc(url)}" target="_blank" style="display:inline-block;background:#B58428;color:#fff;text-decoration:none;font:bold 11px Arial,sans-serif;padding:5px 7px;border-radius:20px;margin-left:4px">${symbol}</a>`).join('');
 return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="740" style="width:740px;max-width:740px;border-collapse:separate;border-spacing:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#271504">
 <tr><td style="padding:15px 15px 10px 15px">
@@ -35,10 +35,13 @@ $('copyBtn').onclick=async()=>{try{const html=signature();const blob=new Blob([h
 $('htmlBtn').onclick=()=>{const b=new Blob([`<!doctype html><html lang="fr"><meta charset="utf-8"><body>${signature()}</body></html>`],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='signature-ias.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 function show(page){const isAdmin=page==='admin';$('employee').hidden=isAdmin;$('admin').hidden=!isAdmin;$('employeeTab').classList.toggle('active',!isAdmin);$('adminTab').classList.toggle('active',isAdmin);if(isAdmin)checkAdmin()}
 $('employeeTab').onclick=()=>show('employee');$('adminTab').onclick=()=>show('admin');
-async function load(){try{campaigns=await api('/api/campaigns');update()}catch{$('copyStatus').textContent='Serveur hors ligne : déployer ou démarrer l’application pour utiliser les campagnes.';update()}}
-async function checkAdmin(){try{const m=await api('/api/me');$('loginBox').hidden=m.admin;$('adminApp').hidden=!m.admin;if(m.admin)await refreshAdmin()}catch(e){$('loginStatus').textContent=e.message}}
+async function load(){try{[campaigns,settings]=await Promise.all([api('/api/campaigns'),api('/api/settings')]);update()}catch{$('copyStatus').textContent='Serveur hors ligne : déployer ou démarrer l’application pour utiliser les campagnes.';update()}}
+async function checkAdmin(){try{const m=await api('/api/me');$('loginBox').hidden=m.admin;$('adminApp').hidden=!m.admin;if(m.admin){await refreshAdmin();await loadSettingsAdmin()}}catch(e){$('loginStatus').textContent=e.message}}
 $('loginBtn').onclick=async()=>{try{await api('/api/login',{method:'POST',body:JSON.stringify({password:$('password').value})});$('password').value='';$('loginStatus').textContent='';await checkAdmin()}catch(e){$('loginStatus').textContent=e.message}};
 $('logoutBtn').onclick=async()=>{await api('/api/logout',{method:'POST'});await checkAdmin()};
+const settingIds={website:'siteLink',linkedin:'linkedinLink',facebook:'facebookLink',instagram:'instagramLink',tiktok:'tiktokLink'};
+async function loadSettingsAdmin(){settings=await api('/api/settings');for(const [key,id] of Object.entries(settingIds))$(id).value=settings[key]||'';update()}
+$('saveLinksBtn').onclick=async()=>{try{const data={};for(const [key,id] of Object.entries(settingIds))data[key]=$(id).value.trim();await api('/api/admin/settings',{method:'POST',body:JSON.stringify(data)});$('linksStatus').textContent='Liens enregistrés.';await load()}catch(e){$('linksStatus').textContent=e.message}};
 function clearForm(){$('campId').value='';$('campTitle').value='';$('campLink').value='';$('campOrder').value=adminCampaigns.length+1;$('campImage').value='';$('campActive').checked=true;$('saveStatus').textContent=''}
 $('clearBtn').onclick=clearForm;
 $('saveBtn').onclick=async()=>{try{let imageData='';const file=$('campImage').files[0];if(file){if(file.size>5*1024*1024)throw Error('Image trop volumineuse');imageData=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)})}let req={id:$('campId').value,title:$('campTitle').value,link:$('campLink').value,order:Number($('campOrder').value),active:$('campActive').checked,imageData};await api('/api/admin/campaigns',{method:'POST',body:JSON.stringify(req)});$('saveStatus').textContent='Campagne enregistrée.';clearForm();await refreshAdmin();await load()}catch(e){$('saveStatus').textContent=e.message}};
