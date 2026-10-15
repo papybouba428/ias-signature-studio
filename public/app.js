@@ -5,8 +5,14 @@ const api=async(path,opts={})=>{const r=await fetch(path,{credentials:'same-orig
 function signature(){
 const name=esc($('fullName').value.trim()||'Votre nom'),role=esc($('role').value.trim()||'Votre fonction');
 const email=$('email').value.trim(),phone=$('phone').value.trim();
-const campaignImage=campaigns.length===1&&campaigns[0].image?origin+campaigns[0].image:origin+'/assets/campaigns.gif';
-const campaign=campaigns.length?`<td valign="middle" width="315" style="width:315px;padding:8px 0 8px 18px;border-left:2px solid #C99A42"><a href="${origin}/go?utm_source=signature_email&amp;utm_medium=email&amp;utm_campaign=ias_multi" target="_blank" style="text-decoration:none"><img src="${campaignImage}" alt="Découvrez les actualités de l’IAS" width="290" height="98" style="display:block;width:290px;height:98px;border:0"></a><div style="font:10px Arial,sans-serif;color:#9A6A20;padding-top:5px">Découvrez nos actualités →</div></td>`:'';
+// Outlook: une image distante HTTPS et un lien cliquable classique.
+// Une campagne -> redirection directe /go/ID (comptage, puis destination configurée).
+// Plusieurs campagnes dans un GIF -> page de sélection /go (un GIF ne contient qu'un seul lien).
+const single=campaigns.length===1;
+const campaignImage=single&&campaigns[0].image?origin+campaigns[0].image:origin+'/assets/campaigns.gif';
+const campaignUrl=single?origin+'/go/'+encodeURIComponent(campaigns[0].id):origin+'/go';
+const link=campaignUrl+(campaignUrl.includes('?')?'&':'?')+'utm_source=signature_email&utm_medium=email&utm_campaign=ias';
+const campaign=campaigns.length?`<td valign="middle" width="315" style="width:315px;padding:8px 0 8px 18px;border-left:2px solid #C99A42"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${esc(campaignImage)}" alt="${esc(single?campaigns[0].title:'Découvrez les campagnes IAS')}" width="290" style="display:block;width:290px;max-width:290px;height:auto;border:0;outline:none;text-decoration:none"></a><div style="font:10px Arial,sans-serif;color:#9A6A20;padding-top:5px"><a href="${esc(link)}" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir nos campagnes →'}</a></div></td>`:'';
 const separator='<td width="1" style="width:1px;border-left:1px solid #D9B36B;font-size:1px">&nbsp;</td>';
 const icon=(glyph)=>`<td width="27" valign="middle" align="center" style="width:27px;height:27px;background:#F5EBD8;border-radius:50%;color:#9C6B1D;font:bold 15px Arial,sans-serif;line-height:27px">${glyph}</td>`;
 const item=(glyph,text,href)=>`<td valign="middle" style="padding:6px 10px;white-space:nowrap"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${icon(glyph)}<td valign="middle" style="padding-left:8px;font:11px Arial,sans-serif;color:#271504;white-space:nowrap">${href?`<a href="${esc(href)}" style="color:#271504;text-decoration:none">${text}</a>`:text}</td></tr></table></td>`;
