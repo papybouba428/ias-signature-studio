@@ -33,3 +33,15 @@ Installer Pillow dans l'environnement de l'hébergeur : `python3 -m pip install 
 - Le mode « admin » nécessite **serveur déployé et variables secrètes**, pas un simple fichier HTML envoyé par email.
 - Les exemples de campagne ne sont pas préchargés : seul l'administrateur ajoute les visuels et leurs vrais liens.
 - Renforcer la sécurité avant tout déploiement à grande échelle : proxy HTTPS, journalisation, sauvegardes, protection CSRF, limitation des accès IP si possible, gestion de plusieurs admins si nécessaire.
+
+
+## Correctif du bandeau centralisé (15 octobre 2026)
+
+- Les signatures utilisent maintenant l'URL fixe `/assets/campaigns.gif`, régénérée lors des mises à jour.
+- Si une seule campagne est active, `/go` redirige directement vers le lien de la campagne. Avec plusieurs campagnes, il affiche une sélection.
+- Le GIF évite désormais le recadrage : les affiches sont ajustées entièrement, avec des bandes de fond IAS si nécessaire.
+- Une image distante doit être consultable **sans connexion** via HTTPS depuis le navigateur privé d'un destinataire. Vérifier la réponse HTTP 200 et `Content-Type: image/gif`.
+- Stockage persistant impératif pour `data/`, `public/assets/uploads/` et `public/assets/campaigns.gif`. Sur une plateforme à disque éphémère, ces fichiers peuvent disparaître ou diverger entre instances. Utiliser un volume persistant unique ou un stockage d'objets partagé avant production.
+- Outlook, Gmail et les proxys peuvent mettre en cache les images : `no-store` côté serveur ne force pas l'actualisation d'un message déjà reçu. Tester l'affichage sur Outlook desktop, Outlook web et Gmail externe.
+- Le GIF entier ne possède qu'un seul lien ; pour des liens différents sur chaque campagne, utiliser des bannières statiques cliquables séparées ou une page de sélection.
+- Les règles Exchange Online ne sont pas encore installées : les modifications de la partie **identité** de la signature ne se répercutent pas automatiquement sur les anciennes signatures.
