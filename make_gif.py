@@ -1,14 +1,15 @@
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import json, sys, os
 
-root = sys.argv[1]
-items = json.load(open(os.path.join(root, 'data', 'campaigns.json'), encoding='utf8'))
+# Argument : le dossier de données (DATA_DIR) qui contient campaigns.json, uploads/ et reçoit campaigns.gif.
+data = sys.argv[1]
+items = json.load(open(os.path.join(data, 'campaigns.json'), encoding='utf8'))
 active = sorted((x for x in items if x.get('active') and x.get('image')), key=lambda x: x.get('order', 0))
 W, H = 560, 190
 frames = []
 for item in active:
     try:
-        filename = os.path.join(root, 'public', item['image'].lstrip('/'))
+        filename = os.path.join(data, 'uploads', os.path.basename(item['image']))
         with Image.open(filename) as source:
             image = source.convert('RGB')
         # Never crop campaign copy, logos or CTA. Letterbox to shared banner ratio.
@@ -25,6 +26,6 @@ if not frames:
     draw.text((24, 78), 'IAS - Institut des Algorithmes', fill='#EFC871')
     frames = [image]
 
-dest = os.path.join(root, 'public', 'assets', 'campaigns.gif')
+dest = os.path.join(data, 'campaigns.gif')
 frames[0].save(dest, format='GIF', save_all=True, append_images=frames[1:], duration=2500, loop=0, optimize=True)
 print('generated', dest, len(frames))
