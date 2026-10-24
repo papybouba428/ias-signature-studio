@@ -18,7 +18,8 @@ const email=$('email').value.trim(),phone=$('phone').value.trim();
 // Liens fixes vers le serveur : /go (campagnes) et /r/<réseau> redirigent vers les destinations définies par l'admin,
 // donc les signatures déjà installées suivent les changements sans être recopiées.
 const list=o.campaigns||campaigns,A=origin+'/assets/signature/',single=list.length===1;
-const link=origin+'/go?utm_source=signature_email&utm_medium=email&utm_campaign=ias';
+// Lien neutre pour le destinataire (ni « campagne » ni paramètres de suivi visibles au survol).
+const link=origin+'/go';
 const text='font-family:Arial,Helvetica,sans-serif;color:#271504;text-decoration:none';
 const ico=(file,size,alt)=>`<img src="${A}${file}.png" width="${size}" height="${size}" alt="${alt}" style="display:block;width:${size}px;height:${size}px;border:0">`;
 const item=(file,alt,html)=>`<td valign="middle" style="padding:0 14px 0 0;white-space:nowrap"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" width="18" style="width:18px">${ico(file,18,alt)}</td><td valign="middle" style="padding-left:6px;font-size:12px;${text};white-space:nowrap">${html}</td></tr></table></td>`;
@@ -44,7 +45,7 @@ ${contacts.length?row(contacts):''}${line2.length?row(line2):''}
 <td align="right" valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="font:bold 11px Arial,Helvetica,sans-serif;color:#271504;white-space:nowrap;padding-right:2px">Suivez l’IAS</td>${socials}</tr></table></td>
 </tr></table></td></tr>
 <tr><td style="padding:0 0 4px 0"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${o.banner||origin+'/assets/campaigns.gif'}" alt="${esc(single?list[0].title:list.length?'Actualités de l’IAS':'')}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none"></a></td></tr>
-${list.length?`<tr><td style="padding:0 0 8px 0;font:11px Arial,Helvetica,sans-serif"><a href="${esc(link)}" target="_blank" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir les actualités de l’IAS →'}</a></td></tr>`:''}
+${list.length?`<tr><td style="padding:0 0 8px 0;font:11px Arial,Helvetica,sans-serif"><a href="${esc(link)}" target="_blank" style="color:#9A6A20;text-decoration:underline">${single?'En savoir plus →':'Découvrir les actualités de l’IAS →'}</a></td></tr>`:''}
 </table>`;
 }
 function update(){ $('preview').innerHTML=signature();if(!$('adminApp').hidden)campPreview() }
