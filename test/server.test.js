@@ -97,8 +97,8 @@ describe('Campagnes, GIF et redirections /go',()=>{
  before(async()=>{s=start({AUTH_MODE:'azure',WEBSITE_AUTH_ENABLED:'True'});port=await s.ready});
  after(()=>s.stop());
 
- test('aucune campagne : /go affiche « Aucune campagne active »',async()=>{
-  const r=await request(port,'GET','/go');assert.equal(r.status,200);assert.match(r.text,/Aucune campagne active/);
+ test('aucune campagne : /go renvoie vers le site IAS par défaut',async()=>{
+  const r=await request(port,'GET','/go');assert.equal(r.status,302);assert.equal(r.headers.location,'https://ias.sn/');
  });
  let first;
  test('création : visuel stocké dans DATA_DIR et GIF généré',async()=>{
@@ -184,14 +184,17 @@ describe('Liens fixes des réseaux (/r/<réseau>)',()=>{
  before(async()=>{s=start({AUTH_MODE:'local'});port=await s.ready});
  after(()=>s.stop());
 
- test('non configuré : 404',async()=>{assert.equal((await request(port,'GET','/r/linkedin')).status,404)});
+ test('par défaut : liens officiels IAS',async()=>{
+  const r=await request(port,'GET','/r/linkedin');assert.equal(r.status,302);assert.match(r.headers.location,/linkedin\.com\/company\/institut-des-algorithmes/);
+  assert.equal((await request(port,'GET','/api/settings')).json.tiktok,'https://www.tiktok.com/@african.ai4good');
+ });
  test('réseau inconnu : 404',async()=>{assert.equal((await request(port,'GET','/r/../settings.json')).status,404)});
- test('configuré : redirection et comptage ; réseau manquant -> site web',async()=>{
-  const r=await request(port,'POST','/api/admin/settings',{headers:{origin:'http://localhost:'+port},body:{website:'https://www.ias.sn',linkedin:'https://www.linkedin.com/school/ias'}});
+ test('modifié par l’admin : redirection et comptage ; réseau vidé -> site web',async()=>{
+  const r=await request(port,'POST','/api/admin/settings',{headers:{origin:'http://localhost:'+port},body:{website:'https://www.ias.sn',linkedin:'https://www.linkedin.com/school/ias',facebook:''}});
   assert.equal(r.status,200);
   const li=await request(port,'GET','/r/linkedin');assert.equal(li.status,302);assert.equal(li.headers.location,'https://www.linkedin.com/school/ias');
   const fb=await request(port,'GET','/r/facebook');assert.equal(fb.status,302);assert.equal(fb.headers.location,'https://www.ias.sn/');
-  const stats=(await request(port,'GET','/api/admin/stats')).json;assert.equal(stats['r:linkedin'],1);
+  const stats=(await request(port,'GET','/api/admin/stats')).json;assert.equal(stats['r:linkedin'],2);
  });
 });
 
