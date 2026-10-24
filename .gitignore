@@ -5,3 +5,7 @@ data/campaigns.gif
 data/*.tmp
 public/assets/uploads/
 public/assets/campaigns.gif
+# Fichiers locaux
+.cloudflare/
+__pycache__/
+data/settings.json
