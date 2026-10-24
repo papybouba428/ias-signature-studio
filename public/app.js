@@ -36,8 +36,8 @@ ${contacts.length?row(contacts):''}${line2.length?row(line2):''}
 <td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${item('location','Adresse','Dakar, Sénégal')}</tr></table></td>
 <td align="right" valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="font:bold 11px Arial,Helvetica,sans-serif;color:#271504;white-space:nowrap;padding-right:2px">Suivez l’IAS</td>${socials}</tr></table></td>
 </tr></table></td></tr>
-<tr><td style="padding:0 0 4px 0"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${origin}/assets/campaigns.gif" alt="${esc(single?campaigns[0].title:'Actualités de l’IAS')}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none"></a></td></tr>
-<tr><td style="padding:0 0 8px 0;font:11px Arial,Helvetica,sans-serif"><a href="${esc(link)}" target="_blank" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir les actualités de l’IAS →'}</a></td></tr>
+<tr><td style="padding:0 0 4px 0"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${origin}/assets/campaigns.gif" alt="${esc(single?campaigns[0].title:campaigns.length?'Actualités de l’IAS':'')}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none"></a></td></tr>
+${campaigns.length?`<tr><td style="padding:0 0 8px 0;font:11px Arial,Helvetica,sans-serif"><a href="${esc(link)}" target="_blank" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir les actualités de l’IAS →'}</a></td></tr>`:''}
 </table>`;
 }
 function update(){ $('preview').innerHTML=signature() }

@@ -20,17 +20,14 @@ for item in active:
     except Exception as exc:
         print(str(exc), file=sys.stderr)
 
-if not frames:
-    # Aucune campagne active : bandeau IAS par défaut (visuel prérendu, les polices du serveur étant minimales).
-    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'assets', 'signature', 'default-banner.png')
-    try:
-        with Image.open(default) as source:
-            frames = [ImageOps.contain(source.convert('RGB'), (W, H))]
-    except Exception:
-        image = Image.new('RGB', (W, H), '#271504')
-        ImageDraw.Draw(image).text((24, H // 2 - 6), 'IAS - Institut des Algorithmes du Senegal', fill='#EFC871')
-        frames = [image]
-
 dest = os.path.join(data, 'campaigns.gif')
+if not frames:
+    # Aucune campagne active : image transparente de 600x1, invisible dans l'email. L'emplacement reste dans les
+    # signatures, la première campagne publiée y apparaîtra donc sans recopier les signatures.
+    empty = Image.new('P', (W, 1), 0)
+    empty.putpalette([255, 255, 255])
+    empty.save(dest, format='GIF', transparency=0)
+    print('generated', dest, 0)
+    sys.exit(0)
 frames[0].save(dest, format='GIF', save_all=True, append_images=frames[1:], duration=2500, loop=0, optimize=True)
 print('generated', dest, len(frames))
