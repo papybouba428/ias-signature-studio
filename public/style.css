@@ -8,3 +8,10 @@
 #employee .preview{width:100%;min-height:225px;overflow-x:auto;overflow-y:hidden;padding:20px 14px}
 #employee .preview>table{min-width:600px}
 @media(max-width:680px){#employee .columns>.panel:first-child{grid-template-columns:1fr}}
+
+/* Administration : formulaire à gauche, aperçu à droite (fixé pendant le défilement), bibliothèque en dessous */
+#admin .editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:20px;align-items:start}
+#admin .preview-side{position:sticky;top:16px}
+#admin .preview-side .preview{margin-bottom:6px}
+#admin .library{margin-top:20px}
+@media(max-width:1000px){#admin .editor{grid-template-columns:minmax(0,1fr)}#admin .preview-side{position:static}}
