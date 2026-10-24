@@ -6,5 +6,5 @@
 #employee .columns>.panel:first-child h2,#employee .columns>.panel:first-child .hint{grid-column:1/-1}
 #employee .preview-panel{min-width:0}
 #employee .preview{width:100%;min-height:225px;overflow-x:auto;overflow-y:hidden;padding:20px 14px}
-#employee .preview>table{min-width:900px}
+#employee .preview>table{min-width:600px}
 @media(max-width:680px){#employee .columns>.panel:first-child{grid-template-columns:1fr}}

@@ -5,37 +5,40 @@ const api=async(path,opts={})=>{const r=await fetch(path,{credentials:'same-orig
 function signature(){
 const name=esc($('fullName').value.trim()||'Votre nom'),role=esc($('role').value.trim()||'Votre fonction');
 const email=$('email').value.trim(),phone=$('phone').value.trim();
-// Outlook: une image distante HTTPS et un lien cliquable classique.
-// Une campagne -> redirection directe /go/ID (comptage, puis destination configurée).
-// Plusieurs campagnes dans un GIF -> page de sélection /go (un GIF ne contient qu'un seul lien).
-const single=campaigns.length===1;
-const campaignImage=origin+'/assets/campaigns.gif';
-const campaignUrl=origin+'/go'; // stable destination, server routes straight to campaign when only one is active
-const link=campaignUrl+'?utm_source=signature_email&utm_medium=email&utm_campaign=ias';
-const campaign=campaigns.length?`<td valign="middle" width="315" style="width:315px;padding:8px 0 8px 18px;border-left:2px solid #C99A42"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${esc(campaignImage)}" alt="${esc(single?campaigns[0].title:'Découvrez les campagnes IAS')}" width="290" style="display:block;width:290px;max-width:290px;height:auto;border:0;outline:none;text-decoration:none"></a><div style="font:10px Arial,sans-serif;color:#9A6A20;padding-top:5px"><a href="${esc(link)}" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir nos campagnes →'}</a></div></td>`:'';
-const separator='<td width="1" style="width:1px;border-left:1px solid #D9B36B;font-size:1px">&nbsp;</td>';
-const icon=(glyph)=>`<td width="27" valign="middle" align="center" style="width:27px;height:27px;background:#F5EBD8;border-radius:50%;color:#9C6B1D;font:bold 15px Arial,sans-serif;line-height:27px">${glyph}</td>`;
-const item=(glyph,text,href)=>`<td valign="middle" style="padding:6px 10px;white-space:nowrap"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${icon(glyph)}<td valign="middle" style="padding-left:8px;font:11px Arial,sans-serif;color:#271504;white-space:nowrap">${href?`<a href="${esc(href)}" style="color:#271504;text-decoration:none">${text}</a>`:text}</td></tr></table></td>`;
-const cells=[`<td valign="middle" style="padding:6px 10px 6px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background:#B58428;border-radius:18px"><tr><td style="padding:8px 12px;font:bold 11px Arial,sans-serif;color:#fff;white-space:nowrap">Dakar, Sénégal</td></tr></table></td>`];
-if(phone)cells.push(item('☎',esc(phone),'tel:'+phone.replace(/[^+0-9]/g,'')));
-if(email)cells.push(item('✉',esc(email),'mailto:'+email));
-if(settings.website)cells.push(item('↗','Site web',settings.website));
-const contact=cells.join(separator);
-const socials=[['in',settings.linkedin,'LinkedIn'],['f',settings.facebook,'Facebook'],['◎',settings.instagram,'Instagram'],['♪',settings.tiktok,'TikTok']];
-const socialHtml=socials.map(([symbol,url,label])=>`<td width="35" align="center" valign="middle" style="width:35px;padding-left:5px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="28" height="28" align="center" valign="middle" style="width:28px;height:28px;background:${url?'#B58428':'#E9DCC3'};border-radius:50%;font:bold 13px Arial,sans-serif;color:${url?'#ffffff':'#8A6A36'}">${url?`<a href="${esc(url)}" target="_blank" title="${label}" style="display:block;color:#ffffff;text-decoration:none;line-height:28px">${symbol}</a>`:symbol}</td></tr></table></td>`).join('');
-
-return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="1000" style="width:1000px;max-width:1000px;border-collapse:separate;border-spacing:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#271504">
-<tr><td style="padding:15px 15px 10px 15px">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
-<td valign="middle" width="100" style="width:100px;padding:4px 13px 4px 0;border-right:2px solid #C99A42"><img src="${origin}/assets/logo-ias.png" alt="IAS" width="85" style="width:85px;height:auto;display:block;border:0"></td>
-<td valign="middle" style="padding:4px 15px"><div style="font:bold 23px Arial,sans-serif;color:#271504;line-height:1.15">${name}</div><div style="font:bold 15px Arial,sans-serif;color:#A87928;padding-top:5px">${role}</div><div style="font:bold 12px Arial,sans-serif;color:#271504;padding-top:10px">Institut des Algorithmes du Sénégal</div><div style="font:italic 10px Arial,sans-serif;color:#816E56;padding-top:4px">Former, connecter, innover : l’IA au service de l’Afrique.</div></td>
-${campaign}
+// Signature fluide : 100 % de la largeur, 600 px maximum, lignes courtes. Sur mobile, Gmail et Outlook l'affichent
+// sans la réduire (pas de media queries : Outlook retire les balises <style> des signatures).
+// Icônes et logo en PNG hébergés (les symboles Unicode s'affichent en emojis variables selon les messageries).
+// Liens fixes vers le serveur : /go (campagnes) et /r/<réseau> redirigent vers les destinations définies par l'admin,
+// donc les signatures déjà installées suivent les changements sans être recopiées.
+const A=origin+'/assets/signature/',single=campaigns.length===1;
+const link=origin+'/go?utm_source=signature_email&utm_medium=email&utm_campaign=ias';
+const text='font-family:Arial,Helvetica,sans-serif;color:#271504;text-decoration:none';
+const ico=(file,size,alt)=>`<img src="${A}${file}.png" width="${size}" height="${size}" alt="${alt}" style="display:block;width:${size}px;height:${size}px;border:0">`;
+const item=(file,alt,html)=>`<td valign="middle" style="padding:0 14px 0 0;white-space:nowrap"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" width="18" style="width:18px">${ico(file,18,alt)}</td><td valign="middle" style="padding-left:6px;font-size:12px;${text};white-space:nowrap">${html}</td></tr></table></td>`;
+const a=(href,label)=>`<a href="${esc(href)}" style="${text}">${label}</a>`;
+const row=cells=>`<tr><td style="padding:8px 0 0 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${cells.join('')}</tr></table></td></tr>`;
+const contacts=[],line2=[];
+// Plusieurs numéros séparés par / , ou ; : un lien tel: par numéro.
+const phones=phone.split(/[\/,;]/).map(x=>x.trim()).filter(Boolean);
+if(phones.length)contacts.push(item('phone','Tél.',phones.map(x=>a('tel:'+x.replace(/[^+0-9]/g,''),esc(x))).join(' &nbsp;/&nbsp; ')));
+if(email)line2.push(item('mail','Email',a('mailto:'+email,esc(email))));
+if(settings.website)line2.push(item('web','Site web',a(origin+'/r/website','Site web')));
+const socials=[['linkedin','LinkedIn'],['facebook','Facebook'],['instagram','Instagram'],['tiktok','TikTok']]
+ .map(([key,label])=>`<td valign="middle" width="28" style="width:28px;padding-left:3px"><a href="${origin}/r/${key}" target="_blank" title="${label}" style="text-decoration:none">${ico(key,24,label)}</a></td>`).join('');
+return `<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width:100%;max-width:600px;border-collapse:collapse;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#271504">
+<tr><td style="padding:12px 0 12px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td valign="middle" width="80" style="width:80px;padding-right:16px;border-right:2px solid #C99A42"><img src="${A}logo.png" alt="IAS" width="80" style="display:block;width:80px;height:auto;border:0"></td>
+<td valign="middle" style="padding-left:16px"><div style="font:bold 22px Arial,Helvetica,sans-serif;color:#271504;line-height:1.15">${name}</div><div style="font:bold 14px Arial,Helvetica,sans-serif;color:#A87928;padding-top:4px">${role}</div><div style="font:bold 12px Arial,Helvetica,sans-serif;color:#271504;padding-top:8px">Institut des Algorithmes du Sénégal</div><div style="font:italic 11px Arial,Helvetica,sans-serif;color:#816E56;padding-top:3px">Former, connecter, innover : l’IA au service de l’Afrique.</div></td>
 </tr></table></td></tr>
-<tr><td style="padding:0 15px"><div style="border-top:1px solid #D6AB60;font-size:1px;height:1px">&nbsp;</div></td></tr>
-<tr><td style="padding:5px 15px 9px"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
-<td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${contact}</tr></table></td>
-<td align="right" valign="middle" style="padding-left:12px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="font:bold 11px Arial,sans-serif;color:#271504;white-space:nowrap;padding-right:6px">Suivez l’IAS</td>${socialHtml}</tr></table></td>
-</tr></table></td></tr></table>`;
+<tr><td style="border-top:1px solid #D6AB60;font-size:1px;line-height:1px;height:1px">&nbsp;</td></tr>
+${contacts.length?row(contacts):''}${line2.length?row(line2):''}
+<tr><td style="padding:8px 0 10px 0"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse"><tr>
+<td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${item('location','Adresse','Dakar, Sénégal')}</tr></table></td>
+<td align="right" valign="middle"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="font:bold 11px Arial,Helvetica,sans-serif;color:#271504;white-space:nowrap;padding-right:2px">Suivez l’IAS</td>${socials}</tr></table></td>
+</tr></table></td></tr>
+<tr><td style="padding:0 0 4px 0"><a href="${esc(link)}" target="_blank" style="text-decoration:none"><img src="${origin}/assets/campaigns.gif" alt="${esc(single?campaigns[0].title:'Actualités de l’IAS')}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none"></a></td></tr>
+<tr><td style="padding:0 0 8px 0;font:11px Arial,Helvetica,sans-serif"><a href="${esc(link)}" target="_blank" style="color:#9A6A20;text-decoration:underline">${single?'Découvrir cette campagne →':'Découvrir les actualités de l’IAS →'}</a></td></tr>
+</table>`;
 }
 function update(){ $('preview').innerHTML=signature() }
 for(const id of ['fullName','role','email','phone'])$(id).addEventListener('input',update);

@@ -5,7 +5,7 @@ import json, sys, os
 data = sys.argv[1]
 items = json.load(open(os.path.join(data, 'campaigns.json'), encoding='utf8'))
 active = sorted((x for x in items if x.get('active') and x.get('image')), key=lambda x: x.get('order', 0))
-W, H = 560, 190
+W, H = 600, 204
 frames = []
 for item in active:
     try:
@@ -21,10 +21,15 @@ for item in active:
         print(str(exc), file=sys.stderr)
 
 if not frames:
-    image = Image.new('RGB', (W, H), '#271504')
-    draw = ImageDraw.Draw(image)
-    draw.text((24, 78), 'IAS - Institut des Algorithmes', fill='#EFC871')
-    frames = [image]
+    # Aucune campagne active : bandeau IAS par défaut (visuel prérendu, les polices du serveur étant minimales).
+    default = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public', 'assets', 'signature', 'default-banner.png')
+    try:
+        with Image.open(default) as source:
+            frames = [ImageOps.contain(source.convert('RGB'), (W, H))]
+    except Exception:
+        image = Image.new('RGB', (W, H), '#271504')
+        ImageDraw.Draw(image).text((24, H // 2 - 6), 'IAS - Institut des Algorithmes du Senegal', fill='#EFC871')
+        frames = [image]
 
 dest = os.path.join(data, 'campaigns.gif')
 frames[0].save(dest, format='GIF', save_all=True, append_images=frames[1:], duration=2500, loop=0, optimize=True)

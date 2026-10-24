@@ -43,6 +43,7 @@ let gifQueue=Promise.resolve(true);function refresh(){return gifQueue=gifQueue.t
 function removeUpload(image){if(!image||!image.startsWith('/assets/uploads/'))return;const f=path.join(UPLOADS,path.basename(image));if(fs.existsSync(f))fs.unlinkSync(f)}
 function safeLink(s){try{let u=new URL(s);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.toString():null}catch{return null}}
 function escape(s){return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]))}
+const SOCIAL_KEYS=['website','linkedin','facebook','instagram','tiktok'];
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon'};
 // Fichier demandé -> fichier sur disque : visuels et GIF depuis DATA_DIR, le reste depuis public/. null si le chemin sort du dossier autorisé.
 function locate(pathname){
@@ -61,7 +62,7 @@ const server=http.createServer(async(req,res)=>{
   if(pathname==='/api/admin/settings'&&req.method==='POST'){
    const p=guard(req,res);if(!p)return;
    const b=await body(req),o={};
-   for(const key of ['website','linkedin','facebook','instagram','tiktok']){
+   for(const key of SOCIAL_KEYS){
     const v=String(b[key]||'').trim();if(v&&!safeLink(v))return json(res,400,{error:'Lien invalide : '+key});
     o[key]=v?safeLink(v):'';
    }
@@ -79,8 +80,12 @@ const server=http.createServer(async(req,res)=>{
    write(CAM,items);audit(p,'campaign.save',{id,title});const gif=await refresh();return json(res,200,{ok:true,gif})
   }
   if(pathname.startsWith('/api/admin/campaigns/')&&req.method==='DELETE'){const p=guard(req,res);if(!p)return;const id=pathname.split('/').pop();const items=read(CAM),gone=items.find(x=>x.id===id);write(CAM,items.filter(x=>x.id!==id));if(gone){removeUpload(gone.image);audit(p,'campaign.delete',{id,title:gone.title})}return json(res,200,{ok:true,gif:await refresh()})}
+  // Liens fixes des signatures (/r/linkedin…) : redirigent vers le lien actuel défini par l'admin, sans recopier les signatures. Réseau non renseigné -> site web.
+  if(pathname.startsWith('/r/')){const key=pathname.slice(3);const s=read(SETTINGS);const target=SOCIAL_KEYS.includes(key)&&(safeLink(s[key]||'')||safeLink(s.website||''));if(!target)return json(res,404,{error:'Lien non configuré'});const stats=read(STATS);stats['r:'+key]=(stats['r:'+key]||0)+1;write(STATS,stats);res.writeHead(302,{Location:target,'Cache-Control':'no-store'});return res.end()}
   if(pathname==='/go'){
    let items=read(CAM).filter(x=>x.active&&x.link);const stats=read(STATS);stats.landing=(stats.landing||0)+1;write(STATS,stats);
+   // Aucune campagne : le bandeau par défaut renvoie vers le site web de l'IAS.
+   const site=safeLink(read(SETTINGS).website||'');if(!items.length&&site){res.writeHead(302,{Location:site,'Cache-Control':'no-store'});return res.end()}
    if(items.length===1){const item=items[0];stats[item.id]=(stats[item.id]||0)+1;write(STATS,stats);res.writeHead(302,{Location:item.link,'Cache-Control':'no-store'});return res.end();}
    const cards=items.map(x=>`<a href="/go/${encodeURIComponent(x.id)}" style="text-decoration:none;color:#271504;display:block;background:white;border-radius:12px;overflow:hidden;box-shadow:0 5px 25px #2715041a"><img src="${escape(x.image)}" alt="" style="display:block;width:100%;height:140px;object-fit:cover"><strong style="display:block;padding:14px">${escape(x.title)} →</strong></a>`).join('');res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});return res.end(`<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IAS · Nos actualités</title><body style="font-family:Arial,sans-serif;margin:0;background:#f9f5eb;color:#271504"><main style="max-width:780px;margin:auto;padding:32px 18px"><img src="/assets/logo-ias.png" style="width:75px" alt="IAS"><h1>Découvrez les actualités IAS</h1><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">${cards||'Aucune campagne active.'}</div></main></body></html>`)
   }

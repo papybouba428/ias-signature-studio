@@ -57,3 +57,12 @@ Déployer le dossier sur Azure App Service (Linux, Node.js 20+) avec Python 3 et
 - Outlook, Gmail et les proxys peuvent mettre en cache les images : `no-store` côté serveur ne force pas l'actualisation d'un message déjà reçu. Tester l'affichage sur Outlook desktop, Outlook web et Gmail externe.
 - Le GIF entier ne possède qu'un seul lien ; pour des liens différents sur chaque campagne, utiliser des bannières statiques cliquables séparées ou une page de sélection.
 - Les règles Exchange Online ne sont pas encore installées : les modifications de la partie **identité** de la signature ne se répercutent pas automatiquement sur les anciennes signatures.
+
+## Signature v2 (24 octobre 2026)
+
+- Signature fluide (100 %, 600 px maximum, coordonnées sur 3 lignes courtes) : lisible sur mobile sans réduction, testée à 320 et 375 px. Bannière de campagne en pleine largeur sous les coordonnées (GIF 600×204 ; visuels conseillés au ratio ≈ 3:1).
+- Logo et icônes en PNG hébergés dans `public/assets/signature/` (les symboles Unicode s'affichaient en emojis selon les messageries). Ces fichiers, `/assets/campaigns.gif`, `/go` et `/r/*` doivent rester publics (chemins exclus de l'authentification App Service).
+- La bannière est toujours incluse : sans campagne active, le GIF affiche `default-banner.png` et `/go` redirige vers le site web.
+- Site web et réseaux sociaux passent par `/r/<website|linkedin|facebook|instagram|tiktok>`, qui redirige vers le lien défini dans l'administration (réseau non renseigné → site web). Changer un lien ne demande plus de recopier les signatures.
+- Plusieurs numéros séparés par `/`, `,` ou `;` donnent chacun un lien `tel:`.
+- Déploiement : `docker buildx build --platform linux/amd64 -t ghcr.io/falloudiakhate/ias-signature-studio:latest --push .` puis redémarrage de l'App Service.

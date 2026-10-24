@@ -178,3 +178,29 @@ describe('Configuration du démarrage',()=>{
   try{assert.match((await request(port,'GET','/')).headers['strict-transport-security'],/max-age=/)}finally{s.stop()}
  });
 });
+
+describe('Liens fixes des réseaux (/r/<réseau>)',()=>{
+ let s,port;
+ before(async()=>{s=start({AUTH_MODE:'local'});port=await s.ready});
+ after(()=>s.stop());
+
+ test('non configuré : 404',async()=>{assert.equal((await request(port,'GET','/r/linkedin')).status,404)});
+ test('réseau inconnu : 404',async()=>{assert.equal((await request(port,'GET','/r/../settings.json')).status,404)});
+ test('configuré : redirection et comptage ; réseau manquant -> site web',async()=>{
+  const r=await request(port,'POST','/api/admin/settings',{headers:{origin:'http://localhost:'+port},body:{website:'https://www.ias.sn',linkedin:'https://www.linkedin.com/school/ias'}});
+  assert.equal(r.status,200);
+  const li=await request(port,'GET','/r/linkedin');assert.equal(li.status,302);assert.equal(li.headers.location,'https://www.linkedin.com/school/ias');
+  const fb=await request(port,'GET','/r/facebook');assert.equal(fb.status,302);assert.equal(fb.headers.location,'https://www.ias.sn/');
+  const stats=(await request(port,'GET','/api/admin/stats')).json;assert.equal(stats['r:linkedin'],1);
+ });
+});
+
+describe('Bandeau par défaut (aucune campagne)',()=>{
+ let s,port;
+ before(async()=>{s=start({AUTH_MODE:'local'});port=await s.ready});
+ after(()=>s.stop());
+ test('/go sans campagne renvoie vers le site web s’il est défini',async()=>{
+  await request(port,'POST','/api/admin/settings',{headers:{origin:'http://localhost:'+port},body:{website:'https://www.ias.sn'}});
+  const r=await request(port,'GET','/go');assert.equal(r.status,302);assert.equal(r.headers.location,'https://www.ias.sn/');
+ });
+});
