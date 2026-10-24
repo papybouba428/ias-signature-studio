@@ -66,3 +66,5 @@ Déployer le dossier sur Azure App Service (Linux, Node.js 20+) avec Python 3 et
 - Site web et réseaux sociaux passent par `/r/<website|linkedin|facebook|instagram|tiktok>`, qui redirige vers le lien défini dans l'administration (réseau non renseigné → site web). Changer un lien ne demande plus de recopier les signatures.
 - Plusieurs numéros séparés par `/`, `,` ou `;` donnent chacun un lien `tel:`.
 - Déploiement : `docker buildx build --platform linux/amd64 -t ghcr.io/falloudiakhate/ias-signature-studio:latest --push .` puis redémarrage de l'App Service.
+- Administration : aperçu de la campagne dans la signature avant publication (même cadrage 600×204 que le GIF).
+- Session Microsoft expirée : l'interface tente `/.auth/refresh` (paramètre de connexion `offline_access` activé dans l'authentification App Service) puis rejoue la requête ; sinon elle demande de recharger la page.
