@@ -68,7 +68,7 @@ function bannerFrom(src){return new Promise((resolve,reject)=>{const im=new Imag
 // Emplacement affiché tant qu'aucun visuel n'est choisi.
 function bannerPlaceholder(){const W=600,H=204,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#F5EBD8';x.fillRect(0,0,W,H);x.setLineDash([8,6]);x.strokeStyle='#C99A42';x.lineWidth=2;x.strokeRect(6,6,W-12,H-12);x.fillStyle='#9C6B1D';x.textAlign='center';x.font='bold 18px Arial';x.fillText('Votre visuel de campagne',W/2,H/2-6);x.font='13px Arial';x.fillText('1200×408 conseillé (ratio 3:1) · PNG, JPG, WebP ou GIF',W/2,H/2+18);return c.toDataURL('image/png')}
 // Aperçu en temps réel : nom, lien, visuel et statut mettent à jour la signature à chaque modification.
-let campSrc='',campBanner={src:null,url:''},campPreviewUrl='';
+let campSrc='',campBanner={src:null,url:''};
 async function campPreview(src){
  if(src!==undefined)campSrc=src;
  try{if(campBanner.src!==campSrc)campBanner={src:campSrc,url:campSrc?await bannerFrom(campSrc):bannerPlaceholder()}}catch(e){campBanner={src:campSrc,url:bannerPlaceholder()};$('saveStatus').textContent=e.message}
@@ -78,7 +78,9 @@ async function campPreview(src){
  if(!$('campActive').checked)info.push('Campagne inactive : elle ne sera pas affichée dans les signatures.');
  $('campPreviewInfo').textContent=info.join(' · ');
 }
-$('campImage').onchange=()=>{if(campPreviewUrl)URL.revokeObjectURL(campPreviewUrl);const f=$('campImage').files[0];campPreviewUrl=f?URL.createObjectURL(f):'';campPreview(campPreviewUrl)};
+// Lecture en data: (la CSP autorise img-src data: mais pas blob:).
+const readFile=f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error('Fichier illisible'));r.readAsDataURL(f)});
+$('campImage').onchange=async()=>{const f=$('campImage').files[0];$('saveStatus').textContent='';try{campPreview(f?await readFile(f):'')}catch(e){$('saveStatus').textContent=e.message}};
 for(const id of ['campTitle','campLink'])$(id).addEventListener('input',()=>campPreview());
 $('campActive').addEventListener('change',()=>campPreview());
 $('saveBtn').onclick=async()=>{try{let imageData='';const file=$('campImage').files[0];if(file){if(file.size>5*1024*1024)throw Error('Image trop volumineuse');imageData=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)})}let req={id:$('campId').value,title:$('campTitle').value,link:$('campLink').value,order:Number($('campOrder').value),active:$('campActive').checked,imageData};await api('/api/admin/campaigns',{method:'POST',body:JSON.stringify(req)});$('saveStatus').textContent='Campagne enregistrée.';clearForm();await refreshAdmin();await load()}catch(e){$('saveStatus').textContent=e.message}};
