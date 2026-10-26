@@ -207,3 +207,13 @@ describe('Bandeau par défaut (aucune campagne)',()=>{
   const r=await request(port,'GET','/go');assert.equal(r.status,302);assert.equal(r.headers.location,'https://www.ias.sn/');
  });
 });
+
+describe('Anti-CSRF derrière un proxy (Host interne différent du domaine public)',()=>{
+ let s,port;
+ before(async()=>{s=start({AUTH_MODE:'azure',WEBSITE_AUTH_ENABLED:'True',ALLOWED_HOSTS:'signature.ias.sn'});port=await s.ready});
+ after(()=>s.stop());
+ const post=origin=>request(port,'POST','/api/admin/settings',{headers:{...ADMIN,origin},body:{website:'https://ias.sn/'}});
+ test('Origin du domaine public autorisé : 200',async()=>{assert.equal((await post('https://signature.ias.sn')).status,200)});
+ test('Origin d’un autre site : 403',async()=>{assert.equal((await post('https://evil.example')).status,403)});
+ test('sans Origin : 403',async()=>{assert.equal((await request(port,'POST','/api/admin/settings',{headers:ADMIN,body:{}})).status,403)});
+});

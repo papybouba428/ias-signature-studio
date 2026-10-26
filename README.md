@@ -68,3 +68,4 @@ Déployer le dossier sur Azure App Service (Linux, Node.js 20+) avec Python 3 et
 - Déploiement : `docker buildx build --platform linux/amd64 -t ghcr.io/falloudiakhate/ias-signature-studio:latest --push .` puis redémarrage de l'App Service.
 - Administration : aperçu de la campagne dans la signature avant publication (même cadrage 600×204 que le GIF).
 - Session Microsoft expirée : l'interface tente `/.auth/refresh` (paramètre de connexion `offline_access` activé dans l'authentification App Service) puis rejoue la requête ; sinon elle demande de recharger la page.
+- Anti-CSRF : les écritures admin exigent un en-tête `Origin` égal au `Host` reçu ou à un domaine de `ALLOWED_HOSTS` (+ `WEBSITE_HOSTNAME`). Derrière App Service, le `Host` vu par Node peut différer du domaine public : définir `ALLOWED_HOSTS=signature.ias.sn`. Chaque refus est journalisé (`"refused":"origin"`).

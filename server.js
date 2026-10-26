@@ -27,12 +27,15 @@ function principal(req){
   const roleTyp=[p.role_typ,'roles','http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
   return {name:val('name')||val(p.name_typ),email:val('preferred_username','email',p.name_typ),roles:claims.filter(c=>roleTyp.includes(c.typ)).map(c=>String(c.val))}}catch{return null}
 }
+// Domaines publics de l'outil, acceptés comme Origin des requêtes d'écriture (anti-CSRF). Derrière App Service, l'en-tête
+// Host reçu par Node peut différer du domaine du navigateur : on compare donc à une liste fixe (ALLOWED_HOSTS + WEBSITE_HOSTNAME).
+const ALLOWED_HOSTS=new Set([...String(process.env.ALLOWED_HOSTS||'').split(','),process.env.WEBSITE_HOSTNAME||''].map(x=>x.trim().toLowerCase()).filter(Boolean));
 function isAdmin(p){return !!p&&p.roles.includes(ADMIN_ROLE)}
 // Renvoie l'administrateur, ou répond 401 (non connecté) / 403 (sans rôle, ou requête venant d'un autre site) et renvoie null.
 function guard(req,res){
  const p=principal(req);if(!p){json(res,401,{error:'Connexion requise'});return null}
  if(!isAdmin(p)){json(res,403,{error:'Votre compte n\'a pas le rôle administrateur'});return null}
- if(req.method!=='GET'&&req.method!=='HEAD'){let o='';try{o=new URL(req.headers.origin).host}catch{}if(!o||o!==req.headers.host){json(res,403,{error:'Origine de la requête refusée'});return null}}
+ if(req.method!=='GET'&&req.method!=='HEAD'){let o='';try{o=new URL(req.headers.origin).host.toLowerCase()}catch{}if(!o||(o!==String(req.headers.host||'').toLowerCase()&&!ALLOWED_HOSTS.has(o))){console.log(JSON.stringify({refused:'origin',user:p.email||p.name,origin:req.headers.origin||'',host:req.headers.host||'',forwardedHost:req.headers['x-forwarded-host']||'',at:new Date().toISOString()}));json(res,403,{error:'Origine de la requête refusée'});return null}}
  return p;
 }
 function audit(p,action,detail){console.log(JSON.stringify({audit:action,user:p.email||p.name,...detail,at:new Date().toISOString()}))}
