@@ -60,7 +60,9 @@ function locate(pathname){
 const server=http.createServer(async(req,res)=>{
  try{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
-  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('X-Frame-Options','DENY');
+  res.setHeader('X-Content-Type-Options','nosniff');// same-origin : Referer envoyé uniquement au site lui-même (l'authentification App Service l'exige sur les écritures
+  // authentifiées par cookie), jamais aux destinations des campagnes ni aux réseaux sociaux.
+  res.setHeader('Referrer-Policy','same-origin');res.setHeader('X-Frame-Options','DENY');
   res.setHeader('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
   if(PROD)res.setHeader('Strict-Transport-Security','max-age=31536000');
   if(pathname==='/api/me'){const p=principal(req);return json(res,200,{admin:isAdmin(p),authenticated:!!p,name:p?.name||'',email:p?.email||'',mode:AUTH_MODE,loginUrl:'/.auth/login/aad?post_login_redirect_uri=%2F%23admin',logoutUrl:'/.auth/logout?post_logout_redirect_uri=%2F'})}

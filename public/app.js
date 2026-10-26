@@ -4,8 +4,12 @@ const origin=location.origin.startsWith('file:')?'http://localhost:3000':locatio
 // Session Microsoft expirée : l'authentification App Service répond 401 sans contenu. On tente un renouvellement
 // (/.auth/refresh) puis on rejoue la requête une fois ; sinon, message clair au lieu d'une erreur de lecture JSON.
 const refreshSession=async()=>{try{return (await fetch('/.auth/refresh',{credentials:'same-origin'})).ok}catch{return false}};
-const api=async(path,opts={},retry=true)=>{const r=await fetch(path,{credentials:'same-origin',...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});
+// Repli : si l'authentification App Service refuse une écriture authentifiée par cookie (403 sans contenu), on la rejoue
+// avec le jeton de session (id_token lu sur /.auth/me) en Authorization: Bearer, mode accepté par la plateforme.
+const sessionToken=async()=>{try{return (await (await fetch('/.auth/me',{credentials:'same-origin'})).json())[0]?.id_token||''}catch{return ''}};
+const api=async(path,opts={},retry=true)=>{const r=await fetch(path,{credentials:'same-origin',referrerPolicy:'same-origin',...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});
 if(r.status===401&&retry&&await refreshSession())return api(path,opts,false);
+if(r.status===403&&retry&&r.headers.get('content-length')==='0'){const tok=await sessionToken();if(tok)return api(path,{...opts,headers:{...(opts.headers||{}),Authorization:'Bearer '+tok}},false)}
 const t=await r.text();let j={};try{j=t?JSON.parse(t):{}}catch{}
 if(r.status===401&&!j.error)throw Error('Votre session a expiré : rechargez la page pour vous reconnecter.');
 if(!r.ok)throw Error(j.error||'Erreur '+r.status);return j};
