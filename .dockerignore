@@ -1,0 +1,9 @@
+.git
+.env
+node_modules
+data
+docs
+test
+public/assets/uploads
+public/assets/campaigns.gif
+__pycache__

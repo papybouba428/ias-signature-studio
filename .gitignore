@@ -1,0 +1,11 @@
+.env
+# Données générées par l’outil (en production : DATA_DIR sur Azure Files)
+data/uploads/
+data/campaigns.gif
+data/*.tmp
+public/assets/uploads/
+public/assets/campaigns.gif
+# Fichiers locaux
+.cloudflare/
+__pycache__/
+data/settings.json
